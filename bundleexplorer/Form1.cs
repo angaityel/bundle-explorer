@@ -129,8 +129,8 @@ namespace bundleexplorer
 
                                         if (checkBoxExtact.Checked)
                                         {
-                                            Directory.CreateDirectory(Path.GetDirectoryName(saveFolder + "\\bundles\\bundleFileName\\" + file));
-                                            File.WriteAllBytes(saveFolder + "\\bundles\\bundleFileName\\" + file, buffer);
+                                            Directory.CreateDirectory(Path.GetDirectoryName(saveFolder + "\\bundles\\" + bundleFileName + "\\" + file));
+                                            File.WriteAllBytes(saveFolder + "\\bundles\\" + bundleFileName + "\\" + file, buffer);
                                         }
                                         else
                                         {
