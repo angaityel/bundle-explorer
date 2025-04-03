@@ -129,13 +129,13 @@ namespace bundleexplorer
 
                                         if (checkBoxExtact.Checked)
                                         {
-                                            Directory.CreateDirectory(Path.GetDirectoryName(saveFolder + "\\bundles\\" + bundleFileName + "\\" + file));
-                                            File.WriteAllBytes(saveFolder + "\\bundles\\" + bundleFileName + "\\" + file, buffer);
+                                            Directory.CreateDirectory(Path.GetDirectoryName(saveFolder + "\\bundles\\" + bundleFileName + "\\" + file.Replace(":", "__colon__")));
+                                            File.WriteAllBytes(saveFolder + "\\bundles\\" + bundleFileName + "\\" + file.Replace(":", "__colon__"), buffer);
                                         }
                                         else
                                         {
-                                            Directory.CreateDirectory(Path.GetDirectoryName(saveFolder + "\\bundle\\" + file));
-                                            File.WriteAllBytes(saveFolder + "\\bundle\\" + file, buffer);
+                                            Directory.CreateDirectory(Path.GetDirectoryName(saveFolder + "\\bundle\\" + file.Replace(":", "__colon__")));
+                                            File.WriteAllBytes(saveFolder + "\\bundle\\" + file.Replace(":", "__colon__"), buffer);
                                         }
 
                                     }
@@ -517,6 +517,32 @@ namespace bundleexplorer
                     contextMenuStripReplaceList.Enabled = true;
                     contextMenuStripReplaceList.Show(Cursor.Position);
                 }
+
+            }
+        }
+
+        private void addNewToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (treeViewBundle.SelectedNode != null)
+            {
+                if (!treeViewBundle.SelectedNode.FullPath.Contains('.'))
+                {
+                    string bundle = treeViewBundle.SelectedNode.FullPath.Split(' ')[0];
+                    string bundleFilePath = treeViewBundle.SelectedNode.FullPath.Split(")\\")[1].Replace('\\', '/');
+
+                    OpenFileDialog dialog = new()
+                    {
+                        Filter = "File to add | *.*"
+                    };
+                    if (dialog.ShowDialog() == DialogResult.OK)
+                    {
+                        ListViewItem lvi = listViewBundle.Items.Add(bundle);
+                        lvi.SubItems.Add(bundleFilePath + "/" + Path.GetFileName(dialog.FileName).Replace("__colon__", ":"));
+                        lvi.SubItems.Add(dialog.FileName);
+                    }
+
+                }
+
             }
         }
     }

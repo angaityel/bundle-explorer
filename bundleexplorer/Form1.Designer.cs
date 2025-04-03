@@ -42,6 +42,7 @@
             checkBoxExtact = new CheckBox();
             contextMenuStripReplaceList = new ContextMenuStrip(components);
             deleteToolStripMenuItem = new ToolStripMenuItem();
+            addNewToolStripMenuItem = new ToolStripMenuItem();
             contextMenuStripBundleTree.SuspendLayout();
             contextMenuStripReplaceList.SuspendLayout();
             SuspendLayout();
@@ -69,14 +70,14 @@
             // 
             // contextMenuStripBundleTree
             // 
-            contextMenuStripBundleTree.Items.AddRange(new ToolStripItem[] { replaceToolStripMenuItem });
+            contextMenuStripBundleTree.Items.AddRange(new ToolStripItem[] { replaceToolStripMenuItem, addNewToolStripMenuItem });
             contextMenuStripBundleTree.Name = "contextMenuStrip1";
-            contextMenuStripBundleTree.Size = new Size(116, 26);
+            contextMenuStripBundleTree.Size = new Size(181, 70);
             // 
             // replaceToolStripMenuItem
             // 
             replaceToolStripMenuItem.Name = "replaceToolStripMenuItem";
-            replaceToolStripMenuItem.Size = new Size(115, 22);
+            replaceToolStripMenuItem.Size = new Size(180, 22);
             replaceToolStripMenuItem.Text = "Replace";
             replaceToolStripMenuItem.Click += replaceToolStripMenuItem_Click;
             // 
@@ -156,6 +157,13 @@
             deleteToolStripMenuItem.Text = "Delete";
             deleteToolStripMenuItem.Click += deleteToolStripMenuItem_Click;
             // 
+            // addNewToolStripMenuItem
+            // 
+            addNewToolStripMenuItem.Name = "addNewToolStripMenuItem";
+            addNewToolStripMenuItem.Size = new Size(180, 22);
+            addNewToolStripMenuItem.Text = "Add new";
+            addNewToolStripMenuItem.Click += addNewToolStripMenuItem_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -190,5 +198,6 @@
         private CheckBox checkBoxExtact;
         private ContextMenuStrip contextMenuStripReplaceList;
         private ToolStripMenuItem deleteToolStripMenuItem;
+        private ToolStripMenuItem addNewToolStripMenuItem;
     }
 }
