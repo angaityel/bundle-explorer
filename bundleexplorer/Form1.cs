@@ -528,7 +528,9 @@ namespace bundleexplorer
                 if (!treeViewBundle.SelectedNode.FullPath.Contains('.'))
                 {
                     string bundle = treeViewBundle.SelectedNode.FullPath.Split(' ')[0];
-                    string bundleFilePath = treeViewBundle.SelectedNode.FullPath.Split(")\\")[1].Replace('\\', '/');
+                    string bundleFilePath = "";
+                    if (treeViewBundle.SelectedNode.Parent != null)
+                        bundleFilePath = treeViewBundle.SelectedNode.FullPath.Split(")\\")[1].Replace('\\', '/');
 
                     OpenFileDialog dialog = new()
                     {
@@ -537,11 +539,15 @@ namespace bundleexplorer
                     if (dialog.ShowDialog() == DialogResult.OK)
                     {
                         ListViewItem lvi = listViewBundle.Items.Add(bundle);
-                        lvi.SubItems.Add(bundleFilePath + "/" + Path.GetFileName(dialog.FileName).Replace("__colon__", ":"));
+                        if (bundleFilePath != "")
+                            lvi.SubItems.Add(bundleFilePath + "/" + Path.GetFileName(dialog.FileName).Replace("__colon__", ":"));
+                        else
+                            lvi.SubItems.Add(Path.GetFileName(dialog.FileName).Replace("__colon__", ":"));
                         lvi.SubItems.Add(dialog.FileName);
                     }
-
                 }
+            }
+        }
 
             }
         }
