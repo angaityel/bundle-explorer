@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.IO.Compression;
 using System.Text;
 
@@ -7,6 +8,7 @@ namespace bundleexplorer
     {
         string bundlePath = "";
         Dictionary<ulong, string> hashDict = new Dictionary<ulong, string>();
+        Dictionary<ulong, string> hashDict32 = new Dictionary<ulong, string>();
         public Form1()
         {
             InitializeComponent();
@@ -29,8 +31,10 @@ namespace bundleexplorer
             var fileNames = File.ReadAllLines("filenames.txt");
             foreach (string fileName in fileNames)
             {
-                ulong fileNameHash = Murmur.ComputeHash64(Encoding.ASCII.GetBytes(fileName));
-                hashDict[fileNameHash] = fileName;
+                ulong fileNameHash64 = Murmur.ComputeHash64(Encoding.ASCII.GetBytes(fileName));
+                hashDict[fileNameHash64] = fileName;
+                ulong fileNameHash32 = fileNameHash64 >> 32;
+                hashDict32[fileNameHash32] = fileName;
             }
         }
         public void Export(string[] bundleList, string saveFolder)
@@ -137,21 +141,13 @@ namespace bundleexplorer
                                             Directory.CreateDirectory(Path.GetDirectoryName(saveFolder + "\\bundle\\" + file.Replace(":", "__colon__")));
                                             File.WriteAllBytes(saveFolder + "\\bundle\\" + file.Replace(":", "__colon__"), buffer);
                                         }
-
                                     }
-
                                 }
-
                             }
-
                         }
                     }
-
                 }
             }
-
-
-
         }
 
         private void buttonOpen_Click(object sender, EventArgs e)
@@ -228,12 +224,10 @@ namespace bundleexplorer
                                     }
                                     list.Add(filePath + "." + fileExtension);
                                 }
-
                             }
                         }
                     }
                     treeViewBundle.Nodes.Add(LoadTree(list, Path.GetFileName(bundleFile) + " (" + fileNamePath + ")"));
-
                 }
             }
             treeViewBundle.Sort();
@@ -274,9 +268,7 @@ namespace bundleexplorer
                         lvi.SubItems.Add(bundleFilePath);
                         lvi.SubItems.Add(dialog.FileName);
                     }
-
                 }
-
             }
         }
 
@@ -288,7 +280,6 @@ namespace bundleexplorer
                 {
                     contextMenuStripBundleTree.Enabled = false;
                 }
-
             }
         }
 
@@ -343,7 +334,6 @@ namespace bundleexplorer
                 {
                     using (MemoryStream memory = new MemoryStream())
                     {
-                        // Use the memory stream in a binary reader.
                         using (BinaryWriter writerMemory = new BinaryWriter(memory))
                         {
                             int filesCount = patch.Value.Count;
@@ -443,8 +433,6 @@ namespace bundleexplorer
                                             }
                                             bwCompressedMemory.Write((uint)tempStream.Length);
 
-
-
                                             tempStream.WriteTo(compressedMemory);
                                         }
                                     }
@@ -466,7 +454,6 @@ namespace bundleexplorer
 
         private async void button1_Click(object sender, EventArgs e)
         {
-
             FolderBrowserDialog selectSaveFolder = new FolderBrowserDialog();
             if (selectSaveFolder.ShowDialog() == DialogResult.OK)
             {
@@ -517,7 +504,6 @@ namespace bundleexplorer
                     contextMenuStripReplaceList.Enabled = true;
                     contextMenuStripReplaceList.Show(Cursor.Position);
                 }
-
             }
         }
 
@@ -549,6 +535,63 @@ namespace bundleexplorer
             }
         }
 
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+            ulong fileNameHash64 = Murmur.ComputeHash64(Encoding.ASCII.GetBytes(textBoxSearchString.Text));
+            ulong fileNameHash32 = fileNameHash64 >> 32;
+
+            var fileNameHash64string = BitConverter.ToString(BitConverter.GetBytes(fileNameHash64)).Replace("-", " ");
+            var fileNameHash32string = BitConverter.ToString(BitConverter.GetBytes((uint)fileNameHash32)).Replace("-", " ");
+
+            richTextBox64string.Text = fileNameHash64.ToString("X");
+            richTextBox32string.Text = fileNameHash32.ToString("X");
+
+            richTextBoxHEX64.Text = fileNameHash64string;
+            richTextBoxHEX32.Text = fileNameHash32string;
+        }
+
+        private void textBox2_TextChanged(object sender, EventArgs e)
+        {
+            if (textBoxSearchHEX.Text.All("0123456789abcdefABCDEF".Contains) && textBoxSearchHEX.Text.Length is > 0 and <= 16)
+            {
+                ulong hashPath = Convert.ToUInt64(textBoxSearchHEX.Text, 16);
+                string filePath;
+                if (hashDict.TryGetValue(hashPath, out filePath))
+                {
+                    textBoxSearchString.Text = filePath;
+                }
+                else
+                {
+                    textBoxSearchString.Text = "unkown name";
+                }
+            }
+            else if (textBoxSearchHEX.Text.All("0123456789abcdefABCDEF ".Contains) && textBoxSearchHEX.Text.Length is > 0 and <= 11)
+            {
+                uint hashPath = Convert.ToUInt32(textBoxSearchHEX.Text.Replace(" ", ""), 16);
+                uint reverseHashPath = BinaryPrimitives.ReverseEndianness(hashPath);
+                string filePath;
+                if (hashDict32.TryGetValue(reverseHashPath, out filePath))
+                {
+                    textBoxSearchString.Text = filePath;
+                }
+                else
+                {
+                    textBoxSearchString.Text = "unkown name";
+                }
+            }
+            else if (textBoxSearchHEX.Text.All("0123456789abcdefABCDEF ".Contains) && textBoxSearchHEX.Text.Length is > 0 and <= 23)
+            {
+                ulong hashPath = Convert.ToUInt64(textBoxSearchHEX.Text.Replace(" ", ""), 16);
+                var reverseHashPath = BinaryPrimitives.ReverseEndianness(hashPath);
+                string filePath;
+                if (hashDict.TryGetValue(reverseHashPath, out filePath))
+                {
+                    textBoxSearchString.Text = filePath;
+                }
+                else
+                {
+                    textBoxSearchString.Text = "unkown name";
+                }
             }
         }
     }
