@@ -73,9 +73,9 @@
             // 
             treeViewBundle.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
             treeViewBundle.ContextMenuStrip = contextMenuStripBundleTree;
-            treeViewBundle.Location = new Point(12, 131);
+            treeViewBundle.Location = new Point(12, 166);
             treeViewBundle.Name = "treeViewBundle";
-            treeViewBundle.Size = new Size(476, 307);
+            treeViewBundle.Size = new Size(476, 334);
             treeViewBundle.TabIndex = 1;
             treeViewBundle.NodeMouseClick += treeViewBundle_NodeMouseClick;
             treeViewBundle.MouseDown += treeViewBundle_MouseDown;
@@ -107,7 +107,7 @@
             listViewBundle.FullRowSelect = true;
             listViewBundle.Location = new Point(494, 41);
             listViewBundle.Name = "listViewBundle";
-            listViewBundle.Size = new Size(692, 397);
+            listViewBundle.Size = new Size(692, 459);
             listViewBundle.TabIndex = 7;
             listViewBundle.UseCompatibleStateImageBehavior = false;
             listViewBundle.View = View.Details;
@@ -259,11 +259,11 @@
             // labelSearchHEX
             // 
             labelSearchHEX.AutoSize = true;
-            labelSearchHEX.Location = new Point(12, 105);
+            labelSearchHEX.Location = new Point(48, 105);
             labelSearchHEX.Name = "labelSearchHEX";
-            labelSearchHEX.Size = new Size(67, 15);
+            labelSearchHEX.Size = new Size(29, 15);
             labelSearchHEX.TabIndex = 21;
-            labelSearchHEX.Text = "Search HEX";
+            labelSearchHEX.Text = "HEX";
             // 
             // textBoxSearchHEX
             // 
@@ -276,17 +276,17 @@
             // labelSearchString
             // 
             labelSearchString.AutoSize = true;
-            labelSearchString.Location = new Point(4, 15);
+            labelSearchString.Location = new Point(41, 15);
             labelSearchString.Name = "labelSearchString";
-            labelSearchString.Size = new Size(75, 15);
+            labelSearchString.Size = new Size(38, 15);
             labelSearchString.TabIndex = 23;
-            labelSearchString.Text = "Search string";
+            labelSearchString.Text = "String";
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1198, 450);
+            ClientSize = new Size(1198, 527);
             Controls.Add(labelSearchString);
             Controls.Add(textBoxSearchHEX);
             Controls.Add(labelSearchHEX);
