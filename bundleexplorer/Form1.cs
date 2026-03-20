@@ -13,6 +13,7 @@ namespace bundleexplorer
         {
             InitializeComponent();
 
+            originalTreeView = new TreeView{ Dock = DockStyle.Fill, Visible = false };
             if (File.Exists("replacedfiles.txt"))
             {
                 var lines = File.ReadAllLines("replacedfiles.txt");
@@ -158,6 +159,8 @@ namespace bundleexplorer
             };
             if (openFile.ShowDialog() == DialogResult.OK)
             {
+                treeViewBundle.Nodes.Clear();
+                originalTreeView.Nodes.Clear();
                 bundlePath = Path.GetDirectoryName(openFile.FileName);
                 string[] bundleList = Directory.GetFiles(bundlePath);
                 LoadTree(bundleList);
@@ -231,6 +234,7 @@ namespace bundleexplorer
                 }
             }
             treeViewBundle.Sort();
+            CloneTree(originalTreeView.Nodes, treeViewBundle.Nodes);
         }
         public static TreeNode LoadTree(List<string> paths, string rootNodeName)
         {
@@ -592,6 +596,82 @@ namespace bundleexplorer
                 {
                     textBoxSearchString.Text = "unkown name";
                 }
+            }
+        }
+        private void textBoxFilter_TextChanged(object sender, EventArgs e)
+        {
+            
+            string filterText = textBoxFilter.Text.Trim();
+
+            if (string.IsNullOrEmpty(filterText))
+            {
+                treeViewBundle.Nodes.Clear();
+                CloneTree(treeViewBundle.Nodes, originalTreeView.Nodes);
+                //ExpandAllNodes(treeViewBundle);
+            }
+            else
+            {
+                FilterTreeView(filterText);
+            }
+        }
+        private TreeView originalTreeView;
+        private void FilterTreeView(string filterText)
+        {
+            treeViewBundle.Nodes.Clear();
+
+            foreach (TreeNode originalRoot in originalTreeView.Nodes)
+            {
+                TreeNode filteredRoot = FilterNode(originalRoot, filterText);
+                if (filteredRoot != null)
+                {
+                    treeViewBundle.Nodes.Add(filteredRoot);
+                }
+            }
+
+            ExpandAllNodes(treeViewBundle);
+        }
+        private TreeNode FilterNode(TreeNode sourceNode, string filterText)
+        {
+            bool nodeMatches = sourceNode.Text.IndexOf(filterText, StringComparison.OrdinalIgnoreCase) >= 0;
+
+            List<TreeNode> matchingChildren = new List<TreeNode>();
+            foreach (TreeNode child in sourceNode.Nodes)
+            {
+                TreeNode filteredChild = FilterNode(child, filterText);
+                if (filteredChild != null)
+                {
+                    matchingChildren.Add(filteredChild);
+                }
+            }
+
+            if (nodeMatches || matchingChildren.Count > 0)
+            {
+                TreeNode result = (TreeNode)sourceNode.Clone();
+                result.Nodes.Clear();
+
+                foreach (TreeNode child in matchingChildren)
+                {
+                    result.Nodes.Add(child);
+                }
+
+                return result;
+            }
+
+            return null;
+        }
+        private void CloneTree(TreeNodeCollection destination, TreeNodeCollection source)
+        {
+            foreach (TreeNode node in source)
+            {
+                TreeNode clonedNode = (TreeNode)node.Clone();
+                destination.Add(clonedNode);
+            }
+        }
+        private void ExpandAllNodes(TreeView treeView)
+        {
+            foreach (TreeNode node in treeView.Nodes)
+            {
+                node.Expand();
             }
         }
     }

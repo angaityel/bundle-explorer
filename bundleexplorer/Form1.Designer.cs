@@ -55,6 +55,8 @@
             labelSearchHEX = new Label();
             textBoxSearchHEX = new TextBox();
             labelSearchString = new Label();
+            textBoxFilter = new TextBox();
+            labelSearch = new Label();
             contextMenuStripBundleTree.SuspendLayout();
             contextMenuStripReplaceList.SuspendLayout();
             SuspendLayout();
@@ -282,11 +284,30 @@
             labelSearchString.TabIndex = 23;
             labelSearchString.Text = "String";
             // 
+            // textBoxFilter
+            // 
+            textBoxFilter.Location = new Point(83, 131);
+            textBoxFilter.Name = "textBoxFilter";
+            textBoxFilter.Size = new Size(405, 23);
+            textBoxFilter.TabIndex = 24;
+            textBoxFilter.TextChanged += textBoxFilter_TextChanged;
+            // 
+            // labelSearch
+            // 
+            labelSearch.AutoSize = true;
+            labelSearch.Location = new Point(37, 134);
+            labelSearch.Name = "labelSearch";
+            labelSearch.Size = new Size(42, 15);
+            labelSearch.TabIndex = 27;
+            labelSearch.Text = "Search";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1198, 527);
+            Controls.Add(labelSearch);
+            Controls.Add(textBoxFilter);
             Controls.Add(labelSearchString);
             Controls.Add(textBoxSearchHEX);
             Controls.Add(labelSearchHEX);
@@ -341,5 +362,7 @@
         private Label labelSearchHEX;
         private TextBox textBoxSearchHEX;
         private Label labelSearchString;
+        private TextBox textBoxFilter;
+        private Label labelSearch;
     }
 }
