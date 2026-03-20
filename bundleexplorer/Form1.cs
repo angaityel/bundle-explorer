@@ -252,6 +252,9 @@ namespace bundleexplorer
 
         public void LoadTree(string[] bundleList)
         {
+            HashSet<UInt128> namedFiles = new HashSet<UInt128>();
+            HashSet<UInt128> totalFiles = new HashSet<UInt128>();
+            labelTotalFiles.Text = "";
             foreach (var bundleFile in bundleList)
             {
                 if (!Path.HasExtension(bundleFile) || (bundleFile.Contains(".patch") && !bundleFile.EndsWith(".stream")))
@@ -348,8 +351,10 @@ namespace bundleexplorer
 
                                         ulong hashPath = binaryReaderDecompress.ReadUInt64();
                                         UInt128 combined = (UInt128)hashExtension << 64 | hashPath;
+                                        totalFiles.Add(combined);
                                         if (hashDict.TryGetValue(hashPath, out string filePath))
                                         {
+                                            namedFiles.Add(combined);
                                         }
                                         else
                                         {
@@ -370,6 +375,8 @@ namespace bundleexplorer
                     treeViewBundle.Nodes.Add(LoadTree(list, Path.GetFileName(bundleFile) + " (" + fileNamePath + ")"));
                 }
             }
+            labelTotalFiles.Text = namedFiles.Count + "/" + totalFiles.Count;
+            labelTotalFiles.Visible = true;    
             treeViewBundle.Sort();
             CloneTree(originalTreeView.Nodes, treeViewBundle.Nodes);
         }

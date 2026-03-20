@@ -56,6 +56,8 @@
             textBoxSearchHEX = new TextBox();
             labelSearchString = new Label();
             textBoxFilter = new TextBox();
+            labelTotalFilesText = new Label();
+            labelTotalFiles = new Label();
             labelSearch = new Label();
             contextMenuStripBundleTree.SuspendLayout();
             contextMenuStripReplaceList.SuspendLayout();
@@ -292,6 +294,27 @@
             textBoxFilter.TabIndex = 24;
             textBoxFilter.TextChanged += textBoxFilter_TextChanged;
             // 
+            // labelTotalFilesText
+            // 
+            labelTotalFilesText.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            labelTotalFilesText.AutoSize = true;
+            labelTotalFilesText.Location = new Point(12, 503);
+            labelTotalFilesText.Name = "labelTotalFilesText";
+            labelTotalFilesText.Size = new Size(151, 15);
+            labelTotalFilesText.TabIndex = 25;
+            labelTotalFilesText.Text = "Named/Total (unique) files:";
+            // 
+            // labelTotalFiles
+            // 
+            labelTotalFiles.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            labelTotalFiles.AutoSize = true;
+            labelTotalFiles.Location = new Point(160, 503);
+            labelTotalFiles.Name = "labelTotalFiles";
+            labelTotalFiles.Size = new Size(72, 15);
+            labelTotalFiles.TabIndex = 26;
+            labelTotalFiles.Text = "10000/10000";
+            labelTotalFiles.Visible = false;
+            // 
             // labelSearch
             // 
             labelSearch.AutoSize = true;
@@ -307,6 +330,8 @@
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1198, 527);
             Controls.Add(labelSearch);
+            Controls.Add(labelTotalFiles);
+            Controls.Add(labelTotalFilesText);
             Controls.Add(textBoxFilter);
             Controls.Add(labelSearchString);
             Controls.Add(textBoxSearchHEX);
@@ -363,6 +388,8 @@
         private TextBox textBoxSearchHEX;
         private Label labelSearchString;
         private TextBox textBoxFilter;
+        private Label labelTotalFilesText;
+        private Label labelTotalFiles;
         private Label labelSearch;
     }
 }
