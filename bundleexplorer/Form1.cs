@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.IO.Compression;
 using System.Text;
+using ZstdSharp;
 
 namespace bundleexplorer
 {
@@ -42,16 +43,25 @@ namespace bundleexplorer
         {
             foreach (var bundleFile in bundleList)
             {
-                if (!bundleFile.Contains('.'))
+                if (!Path.HasExtension(bundleFile) || (bundleFile.Contains(".patch") && !bundleFile.EndsWith(".stream")))
                 {
                     string bundleFileName = Path.GetFileName(bundleFile);
+                    ulong fileNameHash = Convert.ToUInt64(Path.GetFileNameWithoutExtension(bundleFile), 16);
+                    if (hashDict.TryGetValue(fileNameHash, out string fileNamePath))
+                    { }
+                    else
+                    {
+                        fileNamePath = "Unknown name";
+                    }
                     List<string> list = new List<string>();
 
                     using (FileStream fileStream = new FileStream(bundleFile, FileMode.Open, FileAccess.Read))
                     {
                         using (BinaryReader brFileStream = new BinaryReader(fileStream))
                         {
-                            brFileStream.ReadInt32();
+                            uint version = brFileStream.ReadUInt32();
+                            if (version is not (>= 4026531843 and <= 4026531847))
+                                continue;
                             int uncompressedSize = brFileStream.ReadInt32();
                             byte[] uncompressedfile = new byte[uncompressedSize];
 
@@ -69,10 +79,25 @@ namespace bundleexplorer
                                     }
                                     else
                                     {
+                                        uint compressionHeader = brFileStream.ReadUInt32();
+                                        brFileStream.BaseStream.Position -= 0x04;
                                         byte[] compressedPart = brFileStream.ReadBytes(compressedSize);
                                         using (var stream = new MemoryStream(compressedPart, 0, compressedPart.Length))
-                                        using (var decompress = new ZLibStream(stream, CompressionMode.Decompress))
-                                            decompress.CopyTo(uncompressedStream);
+                                        {
+                                            if (compressionHeader == 4247762216)
+                                            {
+                                                var dict = File.ReadAllBytes(Path.GetDirectoryName(bundleFile) + "\\" + "compression.dictionary");
+                                                using var decompressor = new Decompressor();
+                                                decompressor.LoadDictionary(dict);
+                                                using (var decompressionStream = new DecompressionStream(stream, decompressor))
+                                                    decompressionStream.CopyTo(uncompressedStream);
+                                            }
+                                            else
+                                            {
+                                                using (var decompress = new ZLibStream(stream, CompressionMode.Decompress))
+                                                    decompress.CopyTo(uncompressedStream);
+                                            }
+                                        }
                                     }
                                 }
 
@@ -80,7 +105,26 @@ namespace bundleexplorer
                                 {
                                     bReader.BaseStream.Position = 0;
                                     int numFiles = bReader.ReadInt32();
-                                    bReader.ReadBytes(0x100);
+                                    int numFiles2 = 0;
+                                    bReader.BaseStream.Position += 0x100;
+
+                                    if (bundleFile.Contains("immortal\\bundled") || bundleFile.Contains("Project Evil\\bundled"))
+                                    {
+                                        bReader.BaseStream.Position = 0x04;
+                                        numFiles = bReader.ReadInt32();
+                                        numFiles2 = bReader.ReadInt32();
+                                        //bReader.BaseStream.Position += 0x04;
+                                    }
+                                    if (numFiles == 0 && !bundleFile.Contains("Warhammer End Times - VR\\bundle"))
+                                    {
+                                        continue;
+                                    }
+                                    if (bundleFile.Contains("Warhammer End Times - VR\\bundle"))
+                                    {
+                                        numFiles = bReader.ReadInt32();
+                                        bReader.BaseStream.Position += 0x04;
+                                    }
+
                                     for (int i = 0; i < numFiles; i++)
                                     {
                                         ulong hashExtension = bReader.ReadUInt64();
@@ -104,47 +148,79 @@ namespace bundleexplorer
                                         }
                                         list.Add(filePath + "." + fileExtension);
 
+                                        if (version == 4026531845 && bundleFile.Contains("Warhammer End Times Vermintide\\bundle"))
+                                            bReader.BaseStream.Position += 0x04;
+                                        if (bundleFile.Contains("Warhammer Vermintide 2\\bundle"))
+                                            bReader.BaseStream.Position += 0x08;
                                     }
+
+                                    bReader.BaseStream.Position += numFiles2 * 0x20;
 
                                     foreach (var file in list)
                                     {
-                                        bReader.ReadBytes(0x10);
-                                        int unk = bReader.ReadByte();
-                                        bReader.ReadBytes(0x0B);
-                                        int fSize = bReader.ReadInt32();
-                                        if (unk == 2)
+                                        bReader.BaseStream.Position += 0x10; //name and extension
+                                        int numParts = bReader.ReadInt32(); //fonts, localization strings
+                                        if (version > 4026531843)
                                         {
-                                            bReader.ReadBytes(0x08);
-                                            fSize += bReader.ReadInt32();
+                                            bReader.BaseStream.Position += 0x04;
                                         }
-                                        else if (unk == 3)
+
+                                        string partNumber = "";
+
+                                        List<int> sizePartsList = new List<int>();
+                                        for (int i = 0; i < numParts; i++)
                                         {
-                                            bReader.ReadBytes(0x08);
-                                            fSize += bReader.ReadInt32();
-                                            bReader.ReadBytes(0x08);
-                                            fSize += bReader.ReadInt32();
+                                            if (bundleFile.Contains("immortal\\bundled") || bundleFile.Contains("Project Evil\\bundled"))
+                                            {
+                                                sizePartsList.Add(bReader.ReadInt32());
+                                                bReader.BaseStream.Position += 0x04;
+                                            }
+                                            else
+                                            {
+                                                bReader.BaseStream.Position += 0x04;
+                                                sizePartsList.Add(bReader.ReadInt32());
+                                                if (version > 4026531843)
+                                                {
+                                                    bReader.BaseStream.Position += 0x04;
+                                                }
+                                            }
                                         }
-                                        bReader.ReadInt32();
-
-
-                                        if (file.Contains(".lua"))
+                                        for (int i = 0; i < sizePartsList.Count; i++)
                                         {
+                                            if (file.Contains(".lua"))
+                                            {
+                                                if (version == 4026531847 && bundleFile.Contains("Warhammer Vermintide 2\\bundle"))
+                                                {
+                                                    sizePartsList[i] = bReader.ReadInt32();
+                                                    bReader.BaseStream.Position += 0x08;
+                                                }
+                                                else if(version > 4026531843)
+                                                {
+                                                    sizePartsList[i] = bReader.ReadInt32();
+                                                    bReader.BaseStream.Position += 0x04;
+                                                }
+                                                else
+                                                {
+                                                    sizePartsList[i] = bReader.ReadInt32() - 4;
+                                                }
+                                            }
+                                            byte[] buffer = new byte[sizePartsList[i]];
+                                            buffer = bReader.ReadBytes(sizePartsList[i]);
 
-                                            fSize = bReader.ReadInt32();
-                                            bReader.ReadInt32();
-                                        }
-                                        byte[] buffer = new byte[fSize];
-                                        buffer = bReader.ReadBytes(fSize);
-
-                                        if (checkBoxExtact.Checked)
-                                        {
-                                            Directory.CreateDirectory(Path.GetDirectoryName(saveFolder + "\\bundles\\" + bundleFileName + "\\" + file.Replace(":", "__colon__")));
-                                            File.WriteAllBytes(saveFolder + "\\bundles\\" + bundleFileName + "\\" + file.Replace(":", "__colon__"), buffer);
-                                        }
-                                        else
-                                        {
-                                            Directory.CreateDirectory(Path.GetDirectoryName(saveFolder + "\\bundle\\" + file.Replace(":", "__colon__")));
-                                            File.WriteAllBytes(saveFolder + "\\bundle\\" + file.Replace(":", "__colon__"), buffer);
+                                            if (numParts != 1)
+                                            {
+                                                partNumber = "_" + i.ToString();
+                                            }
+                                            if (checkBoxExtact.Checked)
+                                            {
+                                                Directory.CreateDirectory(Path.GetDirectoryName(saveFolder + "\\bundles\\" + bundleFileName + " " + fileNamePath.Replace("/", "__") + "\\" + file.Replace(":", "__colon__")));
+                                                File.WriteAllBytes(saveFolder + "\\bundles\\" + bundleFileName + " " + fileNamePath.Replace("/", "__") + "\\" + file.Replace(":", "__colon__") + partNumber, buffer);
+                                            }
+                                            else
+                                            {
+                                                Directory.CreateDirectory(Path.GetDirectoryName(saveFolder + "\\bundle\\" + file.Replace(":", "__colon__")));
+                                                File.WriteAllBytes(saveFolder + "\\bundle\\" + file.Replace(":", "__colon__") + partNumber, buffer);
+                                            }
                                         }
                                     }
                                 }
@@ -178,15 +254,12 @@ namespace bundleexplorer
         {
             foreach (var bundleFile in bundleList)
             {
-
-                if (!bundleFile.Contains('.'))
+                if (!Path.HasExtension(bundleFile) || (bundleFile.Contains(".patch") && !bundleFile.EndsWith(".stream")))
                 {
                     List<string> list = new List<string>();
 
-
-                    ulong fileNameHash = Convert.ToUInt64(Path.GetFileName(bundleFile), 16);
-                    string fileNamePath;
-                    if (hashDict.TryGetValue(fileNameHash, out fileNamePath))
+                    ulong fileNameHash = Convert.ToUInt64(Path.GetFileNameWithoutExtension(bundleFile), 16);
+                    if (hashDict.TryGetValue(fileNameHash, out string fileNamePath))
                     {
                     }
                     else
@@ -198,38 +271,98 @@ namespace bundleexplorer
                     {
                         using (BinaryReader binaryReaderFileStream = new BinaryReader(fileStream))
                         {
-                            binaryReaderFileStream.ReadBytes(0x0C);
-                            int compressedSize = binaryReaderFileStream.ReadInt32();
-                            byte[] compressedPart = binaryReaderFileStream.ReadBytes(compressedSize);
-
-                            using (var streamCompressedPart = new MemoryStream(compressedPart, 0, compressedPart.Length))
-                            using (var decompress = new ZLibStream(streamCompressedPart, CompressionMode.Decompress))
-                            using (var binaryReaderDecompress = new BinaryReader(decompress))
+                            uint version = binaryReaderFileStream.ReadUInt32();
+                            if (version is not (>= 4026531843 and <= 4026531847))
+                                continue;
+                            binaryReaderFileStream.BaseStream.Position += 0x08;
+                            using (var uncompressedStream = new MemoryStream())
                             {
-                                int numfiles = binaryReaderDecompress.ReadInt32();
-                                binaryReaderDecompress.ReadBytes(0x100);
-                                for (int i = 0; i < numfiles; i++)
+                                int chunksRead = 0;
+                                while (binaryReaderFileStream.BaseStream.Position < binaryReaderFileStream.BaseStream.Length)
                                 {
-                                    ulong hashExtension = binaryReaderDecompress.ReadUInt64();
-                                    string fileExtension;
-                                    if (hashDict.TryGetValue(hashExtension, out fileExtension))
+                                    if (chunksRead > 30)
                                     {
+                                        break;
+                                    }
+                                    byte[] chunk = new byte[65536];
+                                    int compressedSize = binaryReaderFileStream.ReadInt32();
+                                    if (compressedSize == 65536)
+                                    {
+                                        chunk = binaryReaderFileStream.ReadBytes(compressedSize);
+                                        uncompressedStream.Write(chunk);
                                     }
                                     else
                                     {
-                                        fileExtension = hashExtension.ToString("x").ToUpper();
+                                        uint compressionHeader = binaryReaderFileStream.ReadUInt32();
+                                        binaryReaderFileStream.BaseStream.Position -= 0x04;
+                                        byte[] compressedPart = binaryReaderFileStream.ReadBytes(compressedSize);
+                                        using (var stream = new MemoryStream(compressedPart, 0, compressedPart.Length))
+                                        {
+                                            if (compressionHeader == 4247762216)
+                                            {
+                                                var dict = File.ReadAllBytes(Path.GetDirectoryName(bundleFile) + "\\" + "compression.dictionary");
+                                                using var decompressor = new Decompressor();
+                                                decompressor.LoadDictionary(dict);
+                                                using (var decompressionStream = new DecompressionStream(stream, decompressor))
+                                                decompressionStream.CopyTo(uncompressedStream);
+                                            }
+                                            else
+                                            {
+                                                using (var decompress = new ZLibStream(stream, CompressionMode.Decompress))
+                                                    decompress.CopyTo(uncompressedStream);
+                                            }
+                                        }
                                     }
+                                    chunksRead++;
+                                }
 
-                                    ulong hashPath = binaryReaderDecompress.ReadUInt64();
-                                    string filePath;
-                                    if (hashDict.TryGetValue(hashPath, out filePath))
+                                using (var binaryReaderDecompress = new BinaryReader(uncompressedStream))
+                                {
+                                    binaryReaderDecompress.BaseStream.Position = 0;
+                                    int numFiles = binaryReaderDecompress.ReadInt32();
+                                    binaryReaderDecompress.BaseStream.Position += 0x100;
+                                    if (bundleFile.Contains("immortal\\bundled") || bundleFile.Contains("Project Evil\\bundled"))
                                     {
+                                        binaryReaderDecompress.BaseStream.Position = 0x04;
+                                        numFiles = binaryReaderDecompress.ReadInt32();
+                                        binaryReaderDecompress.BaseStream.Position += 0x04;
                                     }
-                                    else
+                                    if (numFiles == 0 && !bundleFile.Contains("Warhammer End Times - VR\\bundle"))
                                     {
-                                        filePath = hashPath.ToString("x").ToUpper();
+                                        continue;
                                     }
-                                    list.Add(filePath + "." + fileExtension);
+                                    if (bundleFile.Contains("Warhammer End Times - VR\\bundle"))
+                                    {
+                                        numFiles = binaryReaderDecompress.ReadInt32();
+                                        binaryReaderDecompress.BaseStream.Position += 0x04;
+                                    }
+                                    for (int i = 0; i < numFiles; i++)
+                                    {
+                                        ulong hashExtension = binaryReaderDecompress.ReadUInt64();
+                                        if (hashDict.TryGetValue(hashExtension, out string fileExtension))
+                                        { }
+                                        else
+                                        {
+                                            fileExtension = hashExtension.ToString("x").ToUpper();
+                                        }
+
+                                        ulong hashPath = binaryReaderDecompress.ReadUInt64();
+                                        UInt128 combined = (UInt128)hashExtension << 64 | hashPath;
+                                        if (hashDict.TryGetValue(hashPath, out string filePath))
+                                        {
+                                        }
+                                        else
+                                        {
+                                            filePath = hashPath.ToString("x16").ToUpper();
+                                        }
+                                        list.Add(filePath + "." + fileExtension);
+
+                                        if (version == 4026531845 && bundleFile.Contains("Warhammer End Times Vermintide\\bundle"))
+                                            binaryReaderDecompress.BaseStream.Position += 0x04;
+                                        if (bundleFile.Contains("Warhammer Vermintide 2\\bundle"))
+                                            binaryReaderDecompress.BaseStream.Position += 0x08;
+
+                                    }
                                 }
                             }
                         }

@@ -15,6 +15,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ZstdSharp.Port" Version="0.8.6" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="filenames.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
