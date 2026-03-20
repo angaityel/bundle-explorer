@@ -84,9 +84,13 @@ namespace bundleexplorer
                                     for (int i = 0; i < numFiles; i++)
                                     {
                                         ulong hashExtension = bReader.ReadUInt64();
-                                        string fileExtension;
-                                        if (hashDict.TryGetValue(hashExtension, out fileExtension))
-                                        { }
+                                        if (hashDict.TryGetValue(hashExtension, out string fileExtension))
+                                        {
+                                            if (fileExtension == "texture")
+                                            {
+                                                fileExtension = "dds";
+                                            }
+                                        }
                                         else
                                             fileExtension = hashExtension.ToString("x").ToUpper();
 
@@ -530,9 +534,9 @@ namespace bundleexplorer
                     {
                         ListViewItem lvi = listViewBundle.Items.Add(bundle);
                         if (bundleFilePath != "")
-                            lvi.SubItems.Add(bundleFilePath + "/" + Path.GetFileName(dialog.FileName).Replace("__colon__", ":"));
+                            lvi.SubItems.Add(bundleFilePath + "/" + Path.GetFileName(dialog.FileName).Replace("__colon__", ":").Replace(".dds", ".texture"));
                         else
-                            lvi.SubItems.Add(Path.GetFileName(dialog.FileName).Replace("__colon__", ":"));
+                            lvi.SubItems.Add(Path.GetFileName(dialog.FileName).Replace("__colon__", ":").Replace(".dds", ".texture"));
                         lvi.SubItems.Add(dialog.FileName);
                     }
                 }
