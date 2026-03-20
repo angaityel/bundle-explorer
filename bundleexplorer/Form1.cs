@@ -346,11 +346,13 @@ namespace bundleexplorer
                         {
                             int filesCount = patch.Value.Count;
                             byte[] unk = new byte[256];
+                            uint version;
                             using (FileStream fileStream = new FileStream(bundlePath + "\\" + patch.Key, FileMode.Open, FileAccess.Read))
                             {
                                 using (BinaryReader binaryReaderfileStream = new BinaryReader(fileStream))
                                 {
-                                    binaryReaderfileStream.ReadBytes(0x0C);
+                                    version = binaryReaderfileStream.ReadUInt32();
+                                    binaryReaderfileStream.BaseStream.Position += 0x08;
                                     int compressedSize = binaryReaderfileStream.ReadInt32();
                                     byte[] compressedPart = binaryReaderfileStream.ReadBytes(compressedSize);
 
@@ -427,27 +429,41 @@ namespace bundleexplorer
                             {
                                 using (BinaryWriter bwCompressedMemory = new BinaryWriter(compressedMemory))
                                 {
-                                    bwCompressedMemory.Write(4026531844);
+                                    bwCompressedMemory.Write(version);
                                     bwCompressedMemory.Write(memory.Length);
 
                                     byte[] buffer = new byte[65536];
-                                    while (memory.Read(buffer, 0, buffer.Length) > 0)
+                                    int bytesRead;
+                                    int maxCompressedSize = 65536;
+
+                                    while ((bytesRead = memory.Read(buffer, 0, buffer.Length)) > 0)
                                     {
                                         using (var tempStream = new MemoryStream())
                                         {
                                             using (var compress = new ZLibStream(tempStream, CompressionMode.Compress, true))
                                             {
-                                                compress.Write(buffer, 0, buffer.Length);
+                                                compress.Write(buffer, 0, bytesRead);
                                             }
-                                            bwCompressedMemory.Write((uint)tempStream.Length);
+                                            byte[] compressedData = tempStream.ToArray();
 
-                                            tempStream.WriteTo(compressedMemory);
+                                            if (compressedData.Length >= bytesRead || compressedData.Length > maxCompressedSize)
+                                            {
+                                                bwCompressedMemory.Write(65536);
+                                                bwCompressedMemory.Write(buffer, 0, bytesRead);
+                                            }
+                                            else
+                                            {
+                                                bwCompressedMemory.Write(compressedData.Length);
+                                                bwCompressedMemory.Write(compressedData);
+                                            }
                                         }
                                     }
+
                                     Directory.CreateDirectory(Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory + "\\patch\\"));
                                     using (FileStream file = new FileStream(AppDomain.CurrentDomain.BaseDirectory + "\\patch\\" + patch.Key + ".patch_0", FileMode.Create, FileAccess.Write))
                                     {
-                                        compressedMemory.WriteTo(file);
+                                        compressedMemory.Position = 0;
+                                        compressedMemory.CopyTo(file);
                                     }
                                 }
                             }
