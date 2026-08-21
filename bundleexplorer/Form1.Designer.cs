@@ -143,7 +143,7 @@
             buttonCreatePatch.TabIndex = 8;
             buttonCreatePatch.Text = "Create patch";
             buttonCreatePatch.UseVisualStyleBackColor = true;
-            buttonCreatePatch.Click += button2_Click;
+            buttonCreatePatch.Click += buttonCreatePatch_Click;
             // 
             // buttonExtract
             // 
@@ -154,7 +154,7 @@
             buttonExtract.TabIndex = 9;
             buttonExtract.Text = "Extract all";
             buttonExtract.UseVisualStyleBackColor = true;
-            buttonExtract.Click += button1_Click;
+            buttonExtract.Click += buttonExtract_Click;
             // 
             // checkBoxExtact
             // 
@@ -186,7 +186,7 @@
             textBoxSearchString.Name = "textBoxSearchString";
             textBoxSearchString.Size = new Size(405, 23);
             textBoxSearchString.TabIndex = 11;
-            textBoxSearchString.TextChanged += textBox1_TextChanged;
+            textBoxSearchString.TextChanged += textBoxSearchString_TextChanged;
             // 
             // richTextBox64string
             // 
@@ -275,7 +275,7 @@
             textBoxSearchHEX.Name = "textBoxSearchHEX";
             textBoxSearchHEX.Size = new Size(405, 23);
             textBoxSearchHEX.TabIndex = 22;
-            textBoxSearchHEX.TextChanged += textBox2_TextChanged;
+            textBoxSearchHEX.TextChanged += textBoxSearchHEX_TextChanged;
             // 
             // labelSearchString
             // 

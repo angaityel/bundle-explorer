@@ -14,7 +14,7 @@ namespace bundleexplorer
         {
             InitializeComponent();
 
-            originalTreeView = new TreeView{ Dock = DockStyle.Fill, Visible = false };
+            originalTreeView = new TreeView { Dock = DockStyle.Fill, Visible = false };
             if (File.Exists("replacedfiles.txt"))
             {
                 var lines = File.ReadAllLines("replacedfiles.txt");
@@ -65,7 +65,7 @@ namespace bundleexplorer
                             int uncompressedSize = brFileStream.ReadInt32();
                             byte[] uncompressedfile = new byte[uncompressedSize];
 
-                            brFileStream.ReadInt32();
+                            brFileStream.BaseStream.Position += 0x04;
                             using (var uncompressedStream = new MemoryStream())
                             {
                                 while (brFileStream.BaseStream.Position < brFileStream.BaseStream.Length)
@@ -139,8 +139,7 @@ namespace bundleexplorer
                                             fileExtension = hashExtension.ToString("x").ToUpper();
 
                                         ulong hashPath = bReader.ReadUInt64();
-                                        string filePath;
-                                        if (hashDict.TryGetValue(hashPath, out filePath))
+                                        if (hashDict.TryGetValue(hashPath, out string filePath))
                                         { }
                                         else
                                         {
@@ -194,7 +193,7 @@ namespace bundleexplorer
                                                     sizePartsList[i] = bReader.ReadInt32();
                                                     bReader.BaseStream.Position += 0x08;
                                                 }
-                                                else if(version > 4026531843)
+                                                else if (version > 4026531843)
                                                 {
                                                     sizePartsList[i] = bReader.ReadInt32();
                                                     bReader.BaseStream.Position += 0x04;
@@ -230,7 +229,6 @@ namespace bundleexplorer
                 }
             }
         }
-
         private void buttonOpen_Click(object sender, EventArgs e)
         {
             OpenFileDialog openFile = new()
@@ -249,7 +247,6 @@ namespace bundleexplorer
                 checkBoxExtact.Enabled = true;
             }
         }
-
         public void LoadTree(string[] bundleList)
         {
             HashSet<UInt128> namedFiles = new HashSet<UInt128>();
@@ -307,7 +304,7 @@ namespace bundleexplorer
                                                 using var decompressor = new Decompressor();
                                                 decompressor.LoadDictionary(dict);
                                                 using (var decompressionStream = new DecompressionStream(stream, decompressor))
-                                                decompressionStream.CopyTo(uncompressedStream);
+                                                    decompressionStream.CopyTo(uncompressedStream);
                                             }
                                             else
                                             {
@@ -376,7 +373,7 @@ namespace bundleexplorer
                 }
             }
             labelTotalFiles.Text = namedFiles.Count + "/" + totalFiles.Count;
-            labelTotalFiles.Visible = true;    
+            labelTotalFiles.Visible = true;
             treeViewBundle.Sort();
             CloneTree(originalTreeView.Nodes, treeViewBundle.Nodes);
         }
@@ -396,7 +393,6 @@ namespace bundleexplorer
             }
             return rootNode;
         }
-
         private void replaceToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (treeViewBundle.SelectedNode != null)
@@ -444,8 +440,7 @@ namespace bundleexplorer
                 }
             }
         }
-
-        private void button2_Click(object sender, EventArgs e)
+        private void buttonCreatePatch_Click(object sender, EventArgs e)
         {
             if (listViewBundle.Items.Count > 0)
             {
@@ -615,8 +610,7 @@ namespace bundleexplorer
             else
                 MessageBox.Show("Patch list empty");
         }
-
-        private async void button1_Click(object sender, EventArgs e)
+        private async void buttonExtract_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog selectSaveFolder = new FolderBrowserDialog();
             if (selectSaveFolder.ShowDialog() == DialogResult.OK)
@@ -638,7 +632,6 @@ namespace bundleexplorer
                 checkBoxExtact.Enabled = true;
             }
         }
-
         private void deleteToolStripMenuItem_Click(object sender, EventArgs e)
         {
             foreach (ListViewItem lvi in listViewBundle.SelectedItems)
@@ -646,7 +639,6 @@ namespace bundleexplorer
                 listViewBundle.Items.Remove(lvi);
             }
         }
-
         private void listViewBundle_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
@@ -657,7 +649,6 @@ namespace bundleexplorer
                 }
             }
         }
-
         private void listViewBundle_MouseClick(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
@@ -670,7 +661,6 @@ namespace bundleexplorer
                 }
             }
         }
-
         private void addNewToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (treeViewBundle.SelectedNode != null)
@@ -698,8 +688,7 @@ namespace bundleexplorer
                 }
             }
         }
-
-        private void textBox1_TextChanged(object sender, EventArgs e)
+        private void textBoxSearchString_TextChanged(object sender, EventArgs e)
         {
             ulong fileNameHash64 = Murmur.ComputeHash64(Encoding.ASCII.GetBytes(textBoxSearchString.Text));
             ulong fileNameHash32 = fileNameHash64 >> 32;
@@ -713,14 +702,12 @@ namespace bundleexplorer
             richTextBoxHEX64.Text = fileNameHash64string;
             richTextBoxHEX32.Text = fileNameHash32string;
         }
-
-        private void textBox2_TextChanged(object sender, EventArgs e)
+        private void textBoxSearchHEX_TextChanged(object sender, EventArgs e)
         {
             if (textBoxSearchHEX.Text.All("0123456789abcdefABCDEF".Contains) && textBoxSearchHEX.Text.Length is > 0 and <= 16)
             {
                 ulong hashPath = Convert.ToUInt64(textBoxSearchHEX.Text, 16);
-                string filePath;
-                if (hashDict.TryGetValue(hashPath, out filePath))
+                if (hashDict.TryGetValue(hashPath, out string filePath))
                 {
                     textBoxSearchString.Text = filePath;
                 }
@@ -733,8 +720,7 @@ namespace bundleexplorer
             {
                 uint hashPath = Convert.ToUInt32(textBoxSearchHEX.Text.Replace(" ", ""), 16);
                 uint reverseHashPath = BinaryPrimitives.ReverseEndianness(hashPath);
-                string filePath;
-                if (hashDict32.TryGetValue(reverseHashPath, out filePath))
+                if (hashDict32.TryGetValue(reverseHashPath, out string filePath))
                 {
                     textBoxSearchString.Text = filePath;
                 }
@@ -747,8 +733,7 @@ namespace bundleexplorer
             {
                 ulong hashPath = Convert.ToUInt64(textBoxSearchHEX.Text.Replace(" ", ""), 16);
                 var reverseHashPath = BinaryPrimitives.ReverseEndianness(hashPath);
-                string filePath;
-                if (hashDict.TryGetValue(reverseHashPath, out filePath))
+                if (hashDict.TryGetValue(reverseHashPath, out string filePath))
                 {
                     textBoxSearchString.Text = filePath;
                 }
@@ -760,7 +745,6 @@ namespace bundleexplorer
         }
         private void textBoxFilter_TextChanged(object sender, EventArgs e)
         {
-            
             string filterText = textBoxFilter.Text.Trim();
 
             if (string.IsNullOrEmpty(filterText))
